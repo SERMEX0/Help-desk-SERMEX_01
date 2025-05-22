@@ -24,3 +24,6 @@ yarn-error.log*
 
 #hash
 hash.js
+
+#gmail
+gmail-credentials.json
