@@ -1,17 +1,17 @@
 {
   "files": {
     "main.css": "/Help-desk-SERMEX_01/static/css/main.e3fe6bbe.css",
-    "main.js": "/Help-desk-SERMEX_01/static/js/main.2dd9b74f.js",
+    "main.js": "/Help-desk-SERMEX_01/static/js/main.3ce33b9b.js",
     "static/media/slick.svg": "/Help-desk-SERMEX_01/static/media/slick.2630a3e3eab21c607e21.svg",
     "static/media/slick.eot": "/Help-desk-SERMEX_01/static/media/slick.a4e97f5a2a64f0ab1323.eot",
     "static/media/slick.ttf": "/Help-desk-SERMEX_01/static/media/slick.c94f7671dcc99dce43e2.ttf",
     "static/media/slick.woff": "/Help-desk-SERMEX_01/static/media/slick.295183786cd8a1389865.woff",
     "index.html": "/Help-desk-SERMEX_01/index.html",
     "main.e3fe6bbe.css.map": "/Help-desk-SERMEX_01/static/css/main.e3fe6bbe.css.map",
-    "main.2dd9b74f.js.map": "/Help-desk-SERMEX_01/static/js/main.2dd9b74f.js.map"
+    "main.3ce33b9b.js.map": "/Help-desk-SERMEX_01/static/js/main.3ce33b9b.js.map"
   },
   "entrypoints": [
     "static/css/main.e3fe6bbe.css",
-    "static/js/main.2dd9b74f.js"
+    "static/js/main.3ce33b9b.js"
   ]
 }
