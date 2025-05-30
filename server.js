@@ -7,10 +7,9 @@ const jwt = require("jsonwebtoken");
 const path = require("path");
 const nodemailer = require("nodemailer");
 
-// 1. CREA la app primero
 const app = express();
 
-// Middlewares DEBEN ir después de crear app
+// Middlewares
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cors({
@@ -19,17 +18,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// 3. Servir archivos estáticos de React (build) DESPUÉS de middlewares, ANTES de rutas
+// Servir archivos estáticos de React (build)
 app.use(express.static(path.join(__dirname, "build")));
-app.get("*", (req, res, next) => {
-  // Si la ruta comienza con /api, saltar para manejar las APIs normalmente
-  if (req.path.startsWith('/api') || req.path === '/' || req.path === '/test-mail' || req.path === '/login' || req.path === '/register' || req.path === '/change-password') {
-    return next();
-  }
-  res.sendFile(path.join(__dirname, "build", "index.html"));
-});
-
-
 
 // la conexion  a MySQL
 const db = mysql.createConnection({
@@ -48,9 +38,6 @@ db.connect(err => {
 });
 
 // Configuración OAuth2 para Gmail
-
-
-
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -59,7 +46,21 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+// Middleware para autenticar token JWT
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  
+  if (!token) return res.sendStatus(401);
 
+  jwt.verify(token, process.env.JWT_SECRET || "secreto", (err, user) => {
+    if (err) return res.sendStatus(403);
+    req.user = user;
+    next();
+  });
+}
+
+// ----- RUTAS API Y FUNCIONALIDAD -----
 
 // 🔐 Ruta de Login
 app.post("/login", (req, res) => {
@@ -78,13 +79,13 @@ app.post("/login", (req, res) => {
       const token = jwt.sign({ id: user.id, correo: user.correo }, process.env.JWT_SECRET || "secreto", { expiresIn: "1h" });
 
       res.json({ 
-  mensaje: "Inicio de sesión exitoso", 
-  token,
-  user: {
-    id: user.id,  // Asegúrate de incluir el ID
-    correo: user.correo
-  }
-});
+        mensaje: "Inicio de sesión exitoso", 
+        token,
+        user: {
+          id: user.id,
+          correo: user.correo
+        }
+      });
     });
   });
 });
@@ -106,7 +107,6 @@ app.post("/register", (req, res) => {
 
 // Ruta para enviar correo de garantía
 app.post('/api/enviar-garantia', authenticateToken, async (req, res) => {
-  // Configuración de CORS más permisiva para esta ruta
   res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
   res.header('Access-Control-Allow-Methods', 'POST');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -114,7 +114,6 @@ app.post('/api/enviar-garantia', authenticateToken, async (req, res) => {
   const { vendedorEmail, datosFormulario, documentoBase64, imagenes } = req.body;
   
   try {
-    // Validación básica
     if (!documentoBase64) {
       return res.status(400).json({ 
         success: false,
@@ -122,14 +121,12 @@ app.post('/api/enviar-garantia', authenticateToken, async (req, res) => {
       });
     }
 
-    // Procesar adjuntos
     const attachments = [{
       filename: `garantia_${Date.now()}.docx`,
       content: documentoBase64,
       encoding: 'base64'
     }];
 
-    // Procesar imágenes
     if (imagenes && imagenes.length > 0) {
       imagenes.forEach((img, index) => {
         const extension = img.name.split('.').pop().toLowerCase();
@@ -142,7 +139,6 @@ app.post('/api/enviar-garantia', authenticateToken, async (req, res) => {
       });
     }
 
-    // Configurar correo
     const mailOptions = {
       from: `"SERMEX" <${process.env.GMAIL_USER}>`,
       to: vendedorEmail,
@@ -151,10 +147,8 @@ app.post('/api/enviar-garantia', authenticateToken, async (req, res) => {
       attachments: attachments
     };
 
-    // Enviar correo
     await transporter.sendMail(mailOptions);
-    
-    // Respuesta consistente en JSON
+
     res.status(200).json({ 
       success: true,
       message: 'Correo enviado correctamente',
@@ -170,7 +164,6 @@ app.post('/api/enviar-garantia', authenticateToken, async (req, res) => {
     });
   }
 });
-
 
 // Ruta para obtener lista de vendedores
 app.get('/api/vendedores', authenticateToken, (req, res) => {
@@ -230,26 +223,11 @@ app.get('/api/productos/:id', (req, res) => {
   });
 });
 
-// Middleware para autenticar token JWT
-function authenticateToken(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  
-  if (!token) return res.sendStatus(401);
-
-  jwt.verify(token, process.env.JWT_SECRET || "secreto", (err, user) => {
-    if (err) return res.sendStatus(403);
-    req.user = user;
-    next();
-  });
-}
-
-//prueba
-// 📧 Ruta de prueba para correos (elimínala después de probar)
+// 📧 Ruta de prueba para correos
 app.get('/test-mail', async (req, res) => {
   try {
     await transporter.sendMail({
-      to: 'julioosvaldoguzmancorrea53@gmail.com', // Tu correo personal
+      to: 'julioosvaldoguzmancorrea53@gmail.com',
       from: `"Prueba SERMEX" <${process.env.GMAIL_USER}>`,
       subject: 'PRUEBA SERMEX - ' + new Date().toLocaleTimeString(),
       text: 'Si recibes esto, el correo está bien configurado',
@@ -262,11 +240,9 @@ app.get('/test-mail', async (req, res) => {
   }
 });
 
-// Asegúrate que esta ruta esté ANTES del app.listen()
+// Obtener logística por correo
 app.get('/api/logistica/:correo', (req, res) => {
   const { correo } = req.params;
-  console.log("Solicitud recibida para correo:", correo); // Para depuración
-  
   db.query(
     `SELECT * FROM logistica WHERE correo_cliente = ? ORDER BY fecha_creacion DESC`,
     [correo],
@@ -275,32 +251,16 @@ app.get('/api/logistica/:correo', (req, res) => {
         console.error("Error en BD:", err);
         return res.status(500).json({ error: "Error al consultar" });
       }
-      console.log("Resultados encontrados:", results); // Para depuración
       res.json(results);
     }
   );
 });
 
-// 🚀 Iniciar Servidor
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
-});
-
-
-app.get("/", (req, res) => {
-  res.send("🚀 Servidor funcionando correctamente");
-});
-
-
-//cambio de contraseñas
 // 🔐 Ruta para cambiar contraseña
-// 🔐 Ruta para cambiar contraseña (mejorada)
 app.post("/change-password", authenticateToken, async (req, res) => {
   const { currentPassword, newPassword } = req.body;
   const userId = req.user.id;
 
-  // Validación básica
   if (!currentPassword || !newPassword) {
     return res.status(400).json({ error: "Todos los campos son requeridos" });
   }
@@ -310,17 +270,14 @@ app.post("/change-password", authenticateToken, async (req, res) => {
   }
 
   try {
-    // 1. Verificar contraseña actual
     const [user] = await db.promise().query("SELECT password FROM usuarios WHERE id = ?", [userId]);
     if (!user.length) return res.status(404).json({ error: "Usuario no encontrado" });
 
     const isMatch = await bcrypt.compare(currentPassword, user[0].password);
     if (!isMatch) return res.status(401).json({ error: "Contraseña actual incorrecta" });
 
-    // 2. Hashear nueva contraseña
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // 3. Actualizar en la base de datos
     await db.promise().query("UPDATE usuarios SET password = ? WHERE id = ?", [hashedPassword, userId]);
 
     res.json({ success: true, message: "Contraseña actualizada correctamente" });
@@ -331,14 +288,10 @@ app.post("/change-password", authenticateToken, async (req, res) => {
   }
 });
 
-
-// Endpoint para ADMIN actualizar estado
-// Endpoint para actualizar estado (sin protección temporalmente)
-// Ruta para actualizar el estado y notas de un pedido logístico
+// Ruta para actualizar estado logístico
 app.put('/api/logistica/actualizar', (req, res) => {
   const { rma_id, nuevo_estado, notas } = req.body;
 
-  // Validación básica
   if (!rma_id || !nuevo_estado) {
     return res.status(400).json({ error: "Los campos 'rma_id' y 'nuevo_estado' son obligatorios" });
   }
@@ -349,7 +302,7 @@ app.put('/api/logistica/actualizar', (req, res) => {
       detalles = ?,
       fecha_actualizacion = CURRENT_TIMESTAMP 
       WHERE rma_id = ?`,
-    [nuevo_estado, notas || null, rma_id], // notas es opcional
+    [nuevo_estado, notas || null, rma_id],
     (err, result) => {
       if (err) {
         console.error("Error en la base de datos:", err);
@@ -363,13 +316,18 @@ app.put('/api/logistica/actualizar', (req, res) => {
   );
 });
 
-// NO incluyas la función borrarCompletados ni el setInterval
-
-
-
-
-// Ruta de prueba (¡sin base de datos!)
+// Ruta de prueba simple
 app.get('/api/test', (req, res) => {
-  console.log("✅ Ruta /api/test funcionando");
   res.json({ mensaje: "¡El servidor responde correctamente!" });
+});
+
+// ===== AL FINAL: Catch-all para servir React frontend =====
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+});
+
+// Iniciar servidor
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
 });
