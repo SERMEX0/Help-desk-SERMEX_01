@@ -4,12 +4,10 @@ const mysql = require("mysql2");
 const cors = require("cors");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-
-
-
+const path = require("path");
 const nodemailer = require("nodemailer");
 
-// Agrega esto ANTES de tus rutas en server.js:
+// 1. CREA la app primero
 const app = express();
 
 // Middlewares DEBEN ir después de crear app
@@ -20,6 +18,16 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// 3. Servir archivos estáticos de React (build) DESPUÉS de middlewares, ANTES de rutas
+app.use(express.static(path.join(__dirname, "build")));
+app.get("*", (req, res, next) => {
+  // Si la ruta comienza con /api, saltar para manejar las APIs normalmente
+  if (req.path.startsWith('/api') || req.path === '/' || req.path === '/test-mail' || req.path === '/login' || req.path === '/register' || req.path === '/change-password') {
+    return next();
+  }
+  res.sendFile(path.join(__dirname, "build", "index.html"));
+});
 
 
 
