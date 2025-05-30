@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { FaStar, FaArrowLeft, FaSpinner } from "react-icons/fa";
+import { FaArrowLeft, FaSpinner } from "react-icons/fa";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 
