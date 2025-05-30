@@ -27,8 +27,10 @@ const Header = ({ productos = [] }) => {
     <header style={{
   width: "100%", // Cambiado de 97% a 100%
   maxWidth: "1500px",
+  background: "linear-gradient(90deg, #345475 70%, #4474B0 100%)",
+    color: "#fff",
   margin: "0 auto", // Esto centrará el contenido si la pantalla es más ancha que 1500px
-  backgroundColor: "#345475",
+ 
   color: "#ffffff",
   display: "flex",
   alignItems: "center",

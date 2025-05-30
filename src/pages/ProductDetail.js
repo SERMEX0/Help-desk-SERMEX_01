@@ -5,7 +5,7 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
-import styled, { css } from "styled-components";
+import styled, { css, keyframes } from "styled-components";
 import {
   FaChevronLeft,
   FaChevronRight,
@@ -16,7 +16,6 @@ import {
   FaInfoCircle,
   FaCheckCircle,
 } from "react-icons/fa";
-// TU IMPORT REAL DE HEADER Y FOOTER
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 
@@ -57,22 +56,18 @@ const LoadingPlaceholder = () => (
   <MainContainer>
     <Header />
     <Content>
-      <Grid>
+      <ProductHeroSkeleton>
         <div>
-          <Skeleton height={320} style={{ marginBottom: 16 }} />
-          <div style={{ display: "flex", gap: "8px" }}>
-            {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} height={48} width={48} />
-            ))}
-          </div>
+          <Skeleton height={320} width={360} style={{ borderRadius: 20, marginBottom: 18 }} />
         </div>
-        <div>
-          <Skeleton height={36} width="80%" />
-          <Skeleton height={22} width="60%" style={{ margin: "10px 0" }} />
-          <Skeleton height={12} count={3} />
-          <Skeleton height={40} width="100%" style={{ marginTop: "24px" }} />
+        <div style={{ flex: 1, marginLeft: 34 }}>
+          <Skeleton height={36} width={240} style={{ marginBottom: 18 }} />
+          <Skeleton height={22} width="70%" style={{ marginBottom: 10 }} />
+          <Skeleton height={16} count={3} width="55%" />
+          <Skeleton height={40} width="90%" style={{ marginTop: "24px" }} />
         </div>
-      </Grid>
+      </ProductHeroSkeleton>
+      <Skeleton style={{marginTop: 32, borderRadius: 18}} height={220} />
     </Content>
     <Footer />
   </MainContainer>
@@ -151,22 +146,56 @@ const ProductGallery = ({ images, sliderRef }) => {
   );
 };
 
-// --- HEADER PRODUCT ---
-const ProductHeader = ({ title, onBack }) => (
-  <HeaderBar>
-    <BackBtn onClick={onBack}>
-      <FaChevronLeft /> Volver
-    </BackBtn>
-    <Title>{title || "Producto sin nombre"}</Title>
-  </HeaderBar>
+// --- PRODUCT HERO ---
+const ProductHero = ({ producto, onBack, onQuote }) => (
+  <HeroZone>
+    <HeroImage>
+      <ProductGallery
+        images={
+          Array.isArray(producto.Imagen)
+            ? producto.Imagen
+            : [producto.Imagen]
+        }
+      />
+    </HeroImage>
+    <HeroInfo>
+      <BackBtn onClick={onBack}>
+        <FaChevronLeft /> Volver a seleccionar producto
+      </BackBtn>
+      <HeroTitle>{producto.Nombre || "Producto sin nombre"}</HeroTitle>
+      <HeroDetailsRow>
+        {producto.Modelo && (
+          <HeroBadge>
+            <strong>Modelo:</strong> {producto.Modelo}
+          </HeroBadge>
+        )}
+        {producto["Número de serie"] && (
+          <HeroBadge>
+            <strong>Serie:</strong> {producto["Número de serie"]}
+          </HeroBadge>
+        )}
+        {producto["Fecha de compra"] && (
+          <HeroBadge>
+            <strong>Compra:</strong> {producto["Fecha de compra"]}
+          </HeroBadge>
+        )}
+      </HeroDetailsRow>
+      <HeroActions>
+        <QuoteBtn onClick={onQuote}>
+          <FaWhatsapp /> Cotizar más productos
+        </QuoteBtn>
+      </HeroActions>
+    </HeroInfo>
+  </HeroZone>
 );
 
 // --- FEATURES Y DESCRIPTION ---
 const ProductFeatures = ({ features }) => (
-  <Section>
-    <SectionTitle>
-      <FaListAlt /> Características
-    </SectionTitle>
+  <FeatureCard>
+    <CardTitle>
+      <Badge features>Características</Badge>
+      <FaListAlt />
+    </CardTitle>
     {features && features.length > 0 ? (
       <ul>
         {features.map((f, i) => (
@@ -178,44 +207,43 @@ const ProductFeatures = ({ features }) => (
     ) : (
       <NoData>No hay características disponibles</NoData>
     )}
-  </Section>
-);
-const ProductDescription = ({ description }) => (
-  <Section>
-    <SectionTitle>
-      <FaInfoCircle /> Descripción
-    </SectionTitle>
-    <p>{description || "No hay descripción disponible"}</p>
-  </Section>
+  </FeatureCard>
 );
 
-// --- ACCIONES ---
-const ProductActions = ({ productName }) => {
-  const handleContact = () => {
-    const phone = "524434368655";
-    const mail = sessionStorage.getItem("userEmail") || "Correo no disponible";
-    const msg = `¡Hola! Estoy interesado cotizar mas piezas de:\n\n*Nombre del producto:* ${productName}\n*Correo del cliente:* ${mail}\n¿Podrían brindarme más información?`;
-    window.open(
-      `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,
-      "_blank"
-    );
-  };
-  return (
-    <Actions>
-      <WaBtn onClick={handleContact}>
-        <FaWhatsapp /> Cotizar más productos
-      </WaBtn>
-    </Actions>
-  );
-};
+const ProductDescription = ({ description }) => (
+  <FeatureCard>
+    <CardTitle>
+      <Badge desc>Descripción</Badge>
+      <FaInfoCircle />
+    </CardTitle>
+    <p>{description || "No hay descripción disponible"}</p>
+  </FeatureCard>
+);
 
 // --- MAIN PAGE ---
 const ProductDetail = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const producto = useProduct(location);
-  const sliderRef = useRef(null);
   const [activeTab, setActiveTab] = useState("features");
+
+  // WhatsApp handler
+  const handleContact = () => {
+  let mail =
+    sessionStorage.getItem("userEmail") ||
+    localStorage.getItem("userEmail") ||
+    "Correo no disponible";
+  if (mail === "Correo no disponible") {
+    mail = prompt("Por favor, ingresa tu correo para la cotización:");
+    if (!mail) return; // El usuario canceló
+  }
+  const phone = "524434368655";
+  const msg = `¡Hola! Estoy interesado cotizar mas piezas de:\n\n*Nombre del producto:* ${producto?.Nombre}\n*Correo del cliente:* ${mail}\n¿Podrían brindarme más información?`;
+  window.open(
+    `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,
+    "_blank"
+  );
+};
 
   if (!producto) return <LoadingPlaceholder />;
 
@@ -223,48 +251,34 @@ const ProductDetail = () => {
     <MainContainer>
       <Header />
       <Content>
-        <Grid>
-          <GalleryCol>
-            <ProductHeader
-              title={producto.Nombre}
-              onBack={() => navigate("/seleccionar-producto")}
+        <ProductHero
+          producto={producto}
+          onBack={() => navigate("/seleccionar-producto")}
+          onQuote={handleContact}
+        />
+        <StickyTabs>
+          <TabBtn
+            active={activeTab === "features"}
+            onClick={() => setActiveTab("features")}
+          >
+            <FaListAlt /> Características
+          </TabBtn>
+          <TabBtn
+            active={activeTab === "details"}
+            onClick={() => setActiveTab("details")}
+          >
+            <FaInfoCircle /> Descripción
+          </TabBtn>
+        </StickyTabs>
+        <TabSection>
+          {activeTab === "features" ? (
+            <ProductFeatures
+              features={producto["Caracteristicas de mi producto"]}
             />
-            <ProductGallery
-              images={
-                Array.isArray(producto.Imagen)
-                  ? producto.Imagen
-                  : [producto.Imagen]
-              }
-              sliderRef={sliderRef}
-            />
-          </GalleryCol>
-          <InfoCol>
-            <Tabs>
-              <TabBtn
-                active={activeTab === "features"}
-                onClick={() => setActiveTab("features")}
-              >
-                <FaListAlt /> Características
-              </TabBtn>
-              <TabBtn
-                active={activeTab === "details"}
-                onClick={() => setActiveTab("details")}
-              >
-                <FaInfoCircle /> Descripción
-              </TabBtn>
-            </Tabs>
-            <div>
-              {activeTab === "features" ? (
-                <ProductFeatures
-                  features={producto["Caracteristicas de mi producto"]}
-                />
-              ) : (
-                <ProductDescription description={producto.Adicional} />
-              )}
-            </div>
-            <ProductActions productName={producto.Nombre} />
-          </InfoCol>
-        </Grid>
+          ) : (
+            <ProductDescription description={producto.Adicional} />
+          )}
+        </TabSection>
       </Content>
       <Footer />
     </MainContainer>
@@ -273,64 +287,67 @@ const ProductDetail = () => {
 
 export default ProductDetail;
 
-// ---------- STYLED COMPONENTS MEJORADOS ----------
+// -------------------- STYLED COMPONENTS --------------------
+
+const fadeUp = keyframes`
+  from { opacity: 0; transform: translateY(45px);}
+  to { opacity: 1; transform: translateY(0);}
+`;
 
 const MainContainer = styled.div`
   font-family: "Poppins", sans-serif;
-  background: #f8f9fa;
+  background: #f6f9fc;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
 `;
 
 const Content = styled.div`
-  max-width: 1100px;
+  max-width: 1200px;
   margin: 32px auto 24px auto;
-  background: #fff;
-  padding: 38px 36px 32px 36px;
-  border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
+  padding: 0;
   flex: 1;
   width: 100%;
-  @media (max-width: 900px) {
-    padding: 16px 4px;
-  }
 `;
 
-const Grid = styled.div`
-  display: grid;
-  grid-template-columns: 1.08fr 0.95fr;
-  gap: 54px 38px;
+const ProductHeroSkeleton = styled.div`
+  display: flex;
   align-items: flex-start;
-  @media (max-width: 1100px) {
-    gap: 32px 18px;
-  }
+  gap: 44px;
+  margin-bottom: 38px;
+`;
+
+const HeroZone = styled.section`
+  display: flex;
+  align-items: stretch;
+  gap: 42px;
+  background: linear-gradient(96deg,#e0e7ff 56%,#fff 100%);
+  border-radius: 22px;
+  box-shadow: 0 6px 30px #4368a80a;
+  padding: 36px 44px 32px 32px;
+  margin-bottom: 35px;
   @media (max-width: 900px) {
-    grid-template-columns: 1fr;
-    gap: 28px;
+    flex-direction: column;
+    gap: 22px;
+    padding: 19px 8px;
   }
 `;
 
-const GalleryCol = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-`;
-
-const InfoCol = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-`;
-
-const HeaderBar = styled.div`
+const HeroImage = styled.div`
+  flex: 1.2;
+  min-width: 260px;
   display: flex;
   align-items: center;
-  gap: 18px;
-  margin-bottom: 18px;
-  width: 100%;
-  justify-content: flex-start;
+  justify-content: center;
+`;
+
+const HeroInfo = styled.div`
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+  min-width: 0;
 `;
 
 const BackBtn = styled.button`
@@ -338,32 +355,181 @@ const BackBtn = styled.button`
   border: none;
   color: #1273b6;
   border-radius: 20px;
-  padding: 7px 16px;
+  padding: 8px 18px;
   cursor: pointer;
   font-weight: 500;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   font-size: 1rem;
+  margin-bottom: 14px;
   transition: background 0.15s;
   &:hover {
     background: #d7edfa;
   }
 `;
 
-const Title = styled.h1`
-  font-size: 1.35rem;
-  font-weight: 600;
-  color: #21416d;
-  margin: 0;
+const HeroTitle = styled.h1`
+  font-size: 2.1rem;
+  font-weight: 700;
+  color: #1d3557;
+  margin-bottom: 5px;
+  letter-spacing: 0.4px;
   @media (max-width: 600px) {
-    font-size: 1.08rem;
+    font-size: 1.3rem;
   }
+`;
+
+const HeroDetailsRow = styled.div`
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+`;
+
+const HeroBadge = styled.span`
+  background: #fff;
+  color: #21416d;
+  font-size: 1.02rem;
+  font-weight: 600;
+  border-radius: 12px;
+  padding: 5px 18px;
+  box-shadow: 0 2px 12px #4368a80b;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+`;
+
+const HeroActions = styled.div`
+  margin-top: 18px;
+`;
+
+const QuoteBtn = styled.button`
+  background: linear-gradient(90deg, #128c7e 80%, #128c7e 100%);
+  color: #fff;
+  font-size: 1.12rem;
+  padding: 13px 27px;
+  border: none;
+  border-radius: 26px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 700;
+  box-shadow: 0 2px 12px #25d3663a;
+  transition: background 0.18s, transform 0.13s;
+  &:hover {
+    background: linear-gradient(90deg, #128c7e 90%, #075e54 100%);
+    transform: scale(1.05);
+  }
+`;
+
+const StickyTabs = styled.div`
+  display: flex;
+  border-radius: 14px;
+  gap: 22px;
+  border: 1.5px solid #e0e7ef;
+  background: #f9fbfd;
+  max-width: 570px;
+  margin: 0 auto 0 auto;
+  box-shadow: 0 2px 18px rgba(44,80,150,0.07);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 4px;
+  justify-content: center;
+`;
+
+const TabBtn = styled.button`
+  flex: 1;
+  min-width: 170px;
+  padding: 19px 0;
+  background: none;
+  border: none;
+  font-size: 1.13rem;
+  font-weight: 700;
+  color: #345475;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+  cursor: pointer;
+  border-radius: 12px;
+  background: ${(props) => (props.active ? "#eaf0fa" : "none")};
+  box-shadow: ${(props) => props.active ? "0 4px 14px rgba(52,84,117,0.04)" : "none"};
+  border-bottom: ${(props) =>
+    props.active ? "3px solid #345475" : "3px solid transparent"};
+  transition: background 0.16s, color 0.16s, box-shadow 0.18s, border 0.18s;
+  &:hover {
+    background: #eaf0fa;
+    color: #233553;
+    box-shadow: 0 6px 22px 0 rgba(44,80,150,0.09);
+  }
+`;
+
+const TabSection = styled.div`
+  margin: 44px auto 0 auto;
+  max-width: 660px;
+  animation: ${fadeUp} 0.66s;
+`;
+
+const FeatureCard = styled.section`
+  background: linear-gradient(120deg,#f8fafc 95%,#e0e7ff 100%);
+  padding: 32px 26px 22px 26px;
+  border-radius: 20px;
+  box-shadow: 0 7px 34px rgba(52,84,117,0.10);
+  margin-bottom: 18px;
+  min-height: 120px;
+`;
+
+const CardTitle = styled.h3`
+  font-size: 1.11rem;
+  color: #2c3e50;
+  font-weight: 700;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 17px;
+`;
+
+const Badge = styled.span`
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 3px 13px;
+  border-radius: 20px;
+  background: ${({ features, desc }) =>
+    features ? "#dbeafe"
+    : desc ? "#fef9c3"
+    : "#e5e7eb"};
+  color: ${({ features, desc }) =>
+    features ? "#2563eb"
+    : desc ? "#c27803"
+    : "#374151"};
+  letter-spacing: 1px;
+  vertical-align: middle;
+`;
+
+const FeatureItem = styled.li`
+  margin-bottom: 7px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 1.06rem;
+  .ok {
+    color: #128c7e;
+  }
+`;
+
+const NoData = styled.p`
+  color: #7f8c8d;
+  font-style: italic;
+  text-align: center;
+  margin: 12px 0;
 `;
 
 const Gallery = styled.div`
   width: 100%;
-  max-width: 430px;
+  max-width: 350px;
   margin: 0 auto;
   padding: 0 6px;
   @media (max-width: 600px) {
@@ -373,7 +539,7 @@ const Gallery = styled.div`
 
 const Img = styled.img`
   width: 100%;
-  height: 340px;
+  height: 300px;
   object-fit: contain;
   border-radius: 13px;
   background: #f4f5f7;
@@ -382,7 +548,7 @@ const Img = styled.img`
   ${(props) =>
     props.$zoom &&
     css`
-      transform: scale(1.29);
+      transform: scale(1.25);
       z-index: 2;
       box-shadow: 0 8px 40px #0002;
     `}
@@ -464,96 +630,5 @@ const DotImg = styled.img`
   &.slick-active {
     border-color: #1273b6;
     filter: grayscale(0);
-  }
-`;
-
-const Tabs = styled.div`
-  margin: 14px 0 8px 0;
-  display: flex;
-  gap: 8px;
-`;
-
-const TabBtn = styled.button`
-  background: none;
-  border: none;
-  border-bottom: 2.3px solid transparent;
-  color: #626a7a;
-  font-size: 1.03rem;
-  font-weight: 500;
-  padding: 8px 21px 8px 10px;
-  cursor: pointer;
-  transition: color 0.18s, border 0.18s;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  ${(props) =>
-    props.active &&
-    css`
-      color: #1273b6;
-      border-bottom: 2.3px solid #1273b6;
-      font-weight: 600;
-    `}
-`;
-
-const Section = styled.section`
-  background: #f7fafc;
-  padding: 18px 20px;
-  border-radius: 11px;
-  margin-bottom: 14px;
-  box-shadow: 0 1px 3px #00000007;
-`;
-
-const SectionTitle = styled.h3`
-  margin: 0 0 10px 0;
-  font-size: 1.09rem;
-  color: #345475;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-`;
-
-const FeatureItem = styled.li`
-  margin-bottom: 7px;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 1rem;
-  .ok {
-    color: #128c7e;
-  }
-`;
-
-const NoData = styled.p`
-  color: #7f8c8d;
-  font-style: italic;
-  text-align: center;
-  margin: 12px 0;
-`;
-
-const Actions = styled.div`
-  margin-top: 12px;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-`;
-
-const WaBtn = styled.button`
-  background: linear-gradient(90deg, #25d366 80%, #128c7e 100%);
-  color: #fff;
-  font-size: 1.13rem;
-  padding: 13px 27px;
-  border: none;
-  border-radius: 22px;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  cursor: pointer;
-  font-weight: 600;
-  box-shadow: 0 2px 8px #25d36633;
-  transition: background 0.18s, transform 0.13s;
-  &:hover {
-    background: linear-gradient(90deg, #128c7e 85%, #075e54 100%);
-    transform: translateY(-2px) scale(1.03);
   }
 `;

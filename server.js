@@ -326,9 +326,10 @@ app.post("/change-password", authenticateToken, async (req, res) => {
 
 // Endpoint para ADMIN actualizar estado
 // Endpoint para actualizar estado (sin protección temporalmente)
+// Ruta para actualizar el estado y notas de un pedido logístico
 app.put('/api/logistica/actualizar', (req, res) => {
   const { rma_id, nuevo_estado, notas } = req.body;
-  
+
   // Validación básica
   if (!rma_id || !nuevo_estado) {
     return res.status(400).json({ error: "Los campos 'rma_id' y 'nuevo_estado' son obligatorios" });
@@ -336,10 +337,10 @@ app.put('/api/logistica/actualizar', (req, res) => {
 
   db.query(
     `UPDATE logistica SET 
-    estado = ?, 
-    detalles = ?,
-    fecha_actualizacion = CURRENT_TIMESTAMP 
-    WHERE rma_id = ?`,
+      estado = ?, 
+      detalles = ?,
+      fecha_actualizacion = CURRENT_TIMESTAMP 
+      WHERE rma_id = ?`,
     [nuevo_estado, notas || null, rma_id], // notas es opcional
     (err, result) => {
       if (err) {
@@ -353,22 +354,8 @@ app.put('/api/logistica/actualizar', (req, res) => {
     }
   );
 });
-// Agrega esto en tu server.js (usa setInterval para ejecutarlo periódicamente)
-function borrarCompletados() {
-  db.query(
-    `DELETE FROM logistica 
-     WHERE estado = 'completado' 
-     AND fecha_actualizacion < NOW() - INTERVAL 5 MINUTE`,
-    (err) => {
-      if (err) console.error("Error borrando completados:", err);
-      else console.log("Pedidos completados borrados automáticamente");
-    }
-  );
-}
 
-// Ejecuta cada minuto (60000 ms)
-setInterval(borrarCompletados, 60000);
-
+// NO incluyas la función borrarCompletados ni el setInterval
 
 
 

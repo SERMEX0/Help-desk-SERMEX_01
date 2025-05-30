@@ -3,7 +3,13 @@ import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 import Header from "../../../components/Header2";
 
-
+// 1. Diccionario de descripciones para cada estado
+const descripcionesEstado = {
+  recibido: 'El producto llegó a SERMEX, pronto empezará la revisión.',
+  en_revision: 'El producto se encuentra en revisión. Actualmente se están reportando y descartando fallas.',
+  reparacion: 'El producto se encuentra en proceso de reparación.',
+  completado: 'El producto está listo y ya ha sido enviado de vuelta.',
+};
 
 const Logistica = () => {
   const [pedidos, setPedidos] = useState([]);
@@ -26,11 +32,10 @@ const Logistica = () => {
       const email = decoded.correo || decoded.email || '';
       setUserEmail(email);
 
-     axios.get(`http://localhost:5000/api/logistica/${email}`, {
-  headers: { 'Authorization': `Bearer ${token}` }
-})
+      axios.get(`http://localhost:5000/api/logistica/${email}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
       .then(res => {
-        console.log("Datos recibidos:", res.data); // Para depuración
         setPedidos(res.data || []);
         setLoading(false);
       })
@@ -45,9 +50,18 @@ const Logistica = () => {
     }
   }, []);
 
+  // Filtrar pedidos: solo mostrar los "completados" si NO han pasado más de 5 días desde su última actualización
+  const now = new Date();
+  const pedidosFiltrados = pedidos.filter(pedido => {
+    if (pedido.estado !== 'completado') return true; // mostrar los que no están completados
+    const fechaActualizacion = new Date(pedido.fecha_actualizacion);
+    const diasPasados = (now - fechaActualizacion) / (1000 * 60 * 60 * 24);
+    return diasPasados <= 5; // mostrar solo si NO han pasado más de 5 días
+  });
+
   const getStatusStyle = (estado) => {
     const colores = {
-      recibido: { backgroundColor: '#e3f2fd', color: '#1976d2' },
+      recibido: { backgroundColor: '#e3f2fd', color: '#1976d2' }, 
       en_revision: { backgroundColor: '#fff8e1', color: '#ff8f00' },
       reparacion: { backgroundColor: '#e8f5e9', color: '#388e3c' },
       completado: { backgroundColor: '#e0f7fa', color: '#00acc1' }
@@ -60,31 +74,35 @@ const Logistica = () => {
   }
 
   return (
-    
     <div style={styles.container}>
       <Header />
       <h2 style={styles.title}>Seguimiento de Tus Equipos</h2>
       <p style={styles.subtitle}>Mostrando resultados para: {userEmail}</p>
       
-      {pedidos.length === 0 ? (
+      {pedidosFiltrados.length === 0 ? (
         <div style={styles.emptyState}>
           No hay pedidos registrados para este correo.
         </div>
       ) : (
         <div style={styles.grid}>
-          {pedidos.map(pedido => (
+          {pedidosFiltrados.map(pedido => (
             <div key={pedido.id} style={styles.card}>
               <h3 style={styles.productName}>{pedido.producto}</h3>
               <p style={styles.rmaText}>Folio RMA: <strong>{pedido.rma_id}</strong></p>
               
               <div style={styles.statusContainer}>
-                <div style={{
-                  ...styles.statusBadge,
-                  ...getStatusStyle(pedido.estado)
-                }}>
+                <div
+                  style={{
+                    ...styles.statusBadge,
+                    ...getStatusStyle(pedido.estado)
+                  }}
+                >
                   {pedido.estado.replace('_', ' ').toUpperCase()}
                 </div>
-                
+                {/* Descripción del estado */}
+                <div style={styles.estadoDescripcion}>
+                  {descripcionesEstado[pedido.estado]}
+                </div>
                 <div style={styles.timeline}>
                   {estadosOrdenados.map(estado => (
                     <div 
@@ -105,30 +123,22 @@ const Logistica = () => {
             </div>
           ))}
         </div>
-        
       )}
-    <Footer />
+      <Footer />
     </div>
-
-   
-    
   );
-  
 };
- 
 
 const styles = {
   container: {
     display: 'flex',
     flexDirection: 'column',
-    minHeight: '100vh', // Ocupa al menos el 100% del viewport height
+    minHeight: '100vh',
     padding: '1px',
     width: '100%',
     maxWidth: '1500px',
     margin: '0 auto',
     fontFamily: 'Arial, sans-serif',
-
-    
   },
   title: {
     color: '#2c3e50',
@@ -190,9 +200,15 @@ const styles = {
     padding: '6px 12px',
     borderRadius: '20px',
     fontWeight: '500',
-    marginBottom: '12px',
+    marginBottom: '8px',
     fontSize: '14px',
     textAlign: 'center'
+  },
+  estadoDescripcion: {
+    fontSize: '13px',
+    color: '#444',
+    margin: '6px 0 10px 0',
+    fontStyle: 'italic'
   },
   timeline: {
     display: 'flex',
@@ -223,17 +239,17 @@ const styles = {
     fontStyle: 'italic'
   }
 };
+
 const Footer = () => (
   <footer style={{
     backgroundColor: "#345475",
     color: "#fff",
-    padding: "20px", // Reduje el padding para que no sea demasiado grande
+    padding: "20px",
     textAlign: "center",
-    marginTop: "auto", // Esto empujará el footer hacia abajo
+    marginTop: "auto",
   }}>
     <p>© 2025 - Todos los derechos reservados</p>
   </footer>
-
 );
 
 export default Logistica;
