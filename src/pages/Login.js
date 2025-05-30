@@ -1,10 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
- 
-  FaWhatsapp
-  
-} from "react-icons/fa";
+
 
 const Login = () => {
   const [correo, setCorreo] = useState("");
