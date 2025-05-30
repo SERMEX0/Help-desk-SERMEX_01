@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import Header from "../../../components/Header2";
 
 
-import{FaTruck,
+import{
   FaTrash,
   FaUpload
  } from "react-icons/fa";
