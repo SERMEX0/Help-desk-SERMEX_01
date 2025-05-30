@@ -171,7 +171,7 @@ function App() {
       }
   
       // Enviar al servidor
-      const response = await fetch('http://localhost:5000/api/enviar-garantia', {
+      const response = await fetch('/api/enviar-garantia', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

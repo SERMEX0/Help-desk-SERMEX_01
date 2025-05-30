@@ -212,7 +212,7 @@ const ChangePassword = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/change-password", {
+      const response = await fetch("/change-password", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",

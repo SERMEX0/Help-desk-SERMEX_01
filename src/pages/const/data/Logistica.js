@@ -32,7 +32,7 @@ const Logistica = () => {
       const email = decoded.correo || decoded.email || '';
       setUserEmail(email);
 
-      axios.get(`http://localhost:5000/api/logistica/${email}`, {
+      axios.get(`/api/logistica/${email}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       .then(res => {

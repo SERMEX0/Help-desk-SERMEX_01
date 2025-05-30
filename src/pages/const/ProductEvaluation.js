@@ -19,7 +19,7 @@ const ProductEvaluation = () => {
   useEffect(() => {
     const loadProduct = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/productos/${productId}`);
+        const response = await fetch(`/api/productos/${productId}`);
         
         if (!response.ok) {
           throw new Error('Producto no encontrado');
